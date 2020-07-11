@@ -1,0 +1,141 @@
+---
+title: "African-American Achievments"
+data: "10/07/2020"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(hrbrthemes)
+```
+
+```{r data}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 24)
+
+firsts <- tuesdata$firsts
+```
+
+```{r pseudo-beeswarm}
+dotting <- function(data,n){
+
+  if (n == 1) {
+    v <- 0
+  } else if (n%%2 == 0) {
+    v <- c(rev(-seq(1/2,n/2,1)),seq(1/2,n/2,1))
+  } else {
+    v <- c(rev(-seq(1,n/2,1)),seq(0,n/2,1))
+  }
+  data$location <- v
+  return(data)
+}
+
+data_plot <- firsts %>%
+  arrange(category, desc(gender), year) %>% 
+  mutate(gender = str_replace(gender, "-", " ") %>% 
+           str_remove(" Firsts"), 
+         lustrum = year%/%5 * 5
+    ) %>% 
+  nest(-lustrum) %>% 
+  mutate(row = map_dbl(data,nrow),
+         data = map2(data,row,~dotting(.x,.y))) %>% 
+  unnest()
+```
+
+```{r plot}
+plot <- 
+  ggplot(
+    data = data_plot,
+    aes(x = lustrum, 
+        y = location, 
+        color = category
+    ), 
+    dpi = 600
+  ) +
+  geom_point(
+    size = 2
+  ) +
+  coord_flip() +
+  scale_x_continuous(
+    minor_breaks = seq(1750, 2015, 25), 
+    breaks = seq(1750, 2020, 50)
+  ) +
+  scale_color_brewer(
+    type = "qual", 
+    palette = 7,
+    guide = guide_legend(
+      label.position = "bottom", 
+      byrow = TRUE,
+      ncol = 1
+    )
+  ) +
+  labs(
+    title = "First achievements by African-Americans",
+    caption = "@AtMissing · Source: Wikipedia, List of African-American firsts",
+    x = "Lustrum"
+  ) +
+  annotate(
+    geom = "text", 
+    x = 1735, 
+    y = -22,
+    label = "1738\nFirst free African-American\ncommunity", 
+    hjust = 0, 
+    size = 3.3, 
+    color = "white", 
+    family = font_rc
+  ) +
+  annotate(
+    geom = "curve", 
+    x = 1728, 
+    y = -16, 
+    xend = 1733, 
+    yend = -1, 
+    curvature = .3, 
+    arrow = arrow(length = unit(2, "mm")),
+    size = 1, 
+    color = "white", 
+    lineend = "round"
+  ) +
+  annotate(
+    geom = "text", 
+    x = 1862.5, 
+    y = -22,
+    label = "1865\nRatification of the\n13th Amendment,\nAbolishment of slavery", 
+    hjust = 0,
+    size = 3.3, 
+    color = "white", 
+    family = font_rc
+  ) +
+  annotate(
+    geom = "text", 
+    x =  1962, 
+    y =  22, 
+    label = "1950s-1960s\nCivil Rights Movement", 
+    hjust = 1, 
+    vjust = 1, 
+    size = 3.3, 
+    color = "white", 
+    family = font_rc
+  ) +
+  theme_ft_rc() +
+  theme(
+    panel.grid.major.y = element_line(linetype = 1, size = 0.7),
+    panel.grid.minor.y = element_line(linetype = 3, size = 0.7),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(hjust = 0.85),
+    axis.text.x = element_blank(),
+    legend.position = c(0.88,0.27), 
+    legend.title = element_blank(),
+    legend.box.background = element_rect(fill = "grey10", color = "#464950", size = 0.7),
+    legend.box.just = "right",
+    legend.text = element_text(color = "white"),
+    plot.title = element_text(hjust = 0.5),
+    plot.caption.position = "plot",
+    plot.caption = element_text(hjust = 1, margin = margin(10,0,0,0)),
+  )
+
+ggsave(here::here("plots","wk_24_2020.png"), plot, width = 162, height = 288, units = "mm", dpi = "retina")
+```

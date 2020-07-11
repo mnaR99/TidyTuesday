@@ -1,0 +1,123 @@
+---
+title: "Slave Voyages"
+data: "10/07/2020"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r packages}
+library(tidyverse)
+library(extrafont)
+library(igraph)
+library(ggraph)
+library(tidygraph)
+library(hrbrthemes)
+```
+
+```{r data}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 25)
+
+slave_routes <- tuesdata$slave_routes
+```
+
+```{r network}
+routes_nw <- slave_routes %>% 
+  mutate_at(vars(port_origin, port_arrival), str_remove, pattern = ",.*$") %>% 
+  mutate_at(vars(port_origin, port_arrival), str_remove, pattern = " \\(.*$") %>% 
+  count(port_origin, port_arrival, sort = T) %>% 
+  filter(port_origin != port_arrival) %>% 
+  head(300) %>% 
+  graph_from_data_frame()
+
+communities <- igraph::walktrap.community(routes_nw)
+
+V(routes_nw)$color <- as.character(membership(communities))
+
+V(routes_nw)$dgr <- degree(routes_nw, mode = "all")
+```
+
+```{r plot}
+set.seed(4213)
+
+plot <- routes_nw %>% 
+  ggraph(layout = layout_nicely(routes_nw)) +
+    geom_node_point(
+      aes(
+        color = color,
+        size = dgr
+      ),
+    ) +
+    geom_edge_fan(
+      aes(alpha = n), 
+      color = "white",
+      arrow = grid::arrow(length = unit(0.06,"inches"), type = "closed")
+    ) +
+    geom_node_text(
+      aes(
+        label = name, 
+        size = dgr
+      ),
+      color = "white",
+      repel = T,
+      segment.color = NA,
+      family = "Century Gothic"
+    ) +
+    scale_color_manual(
+      values = c("#e0ff4f","#f374ae","#00cc99","#ff8552","#0496ff")
+      ) +
+    annotate(
+      "text", 
+      x = 13, 
+      y = 7.5, 
+      hjust = 0.5,
+      label = "300 Most Common\nTransatlantic Slave Routes",
+      color = "white",
+      family = "Lucida Calligraphy",
+      size = 12
+    ) +
+    annotate(
+      "text", 
+      x = -6, 
+      y = 5.5, 
+      hjust = 0,
+      label = str_c(
+        c("1525\nFirst slave voyage direct from\nAfrica to the Americas",
+          "1560\nContinuous slave trade from\nBrazil begins"), 
+        collapse = "\n\n"),
+      color = "white",
+      family = "Century Gothic",
+      size = 3.5
+    ) +
+    annotate(
+      "text", 
+      x = 20, 
+      y = -4, 
+      hjust = 1,
+      label = str_c(
+        c("1808\nAbolition of British and US slave trades takes effect",
+          "1830\nThe anglo-Brazilian anti-slave trade treaty", 
+          "1850\nBrazil suppresses the slave trade",
+          "1866\nLast reported transatlantic slave voyage arrives in the Americas"), 
+        collapse = "\n\n"),
+      color = "white",
+      family = "Century Gothic",
+      size = 3.5
+    ) +
+    labs(
+      caption = "@AtMissing · Source: Slave Voyages project. Transatlantic Slave Trade"
+    ) +
+    theme(
+      panel.background = element_rect(fill = "#25283D"),
+      plot.background = element_rect(fill = "#25283D", 
+                                     color = "#25283D"),
+      legend.position = "none",
+      plot.caption.position = "panel",
+      plot.caption = element_text(color = "white", 
+                                  family = "Century Gothic", 
+                                  hjust = 0.5,
+                                  margin = margin(b = 15))
+    )
+
+ggsave(here::here("plots","wk_25_2020.png"), plot, width = 360, height = 286.8, units = "mm", dpi = "retina")
+```
