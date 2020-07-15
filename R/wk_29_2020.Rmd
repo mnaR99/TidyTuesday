@@ -158,5 +158,5 @@ plot <- ggplot() +
 
 ```{r}
 ggsave(here::here("plots","wk_29_2020.pdf"), plot, width = 19.2, height = 10.8, device = cairo_pdf)
-pdf_convert(pdf = here::here("plots","wk_29_2020.pdf"), format = "png", dpi = 600, filenames = here::here("plots","wk_29_2020_2.png"))
+pdf_convert(pdf = here::here("plots","wk_29_2020.pdf"), format = "png", dpi = 400, filenames = here::here("plots","wk_29_2020.png"))
 ```
