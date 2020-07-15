@@ -1,0 +1,162 @@
+---
+title: "Astronaut Database"
+author: "mnaR99"
+date: "13/7/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(ggnewscale)
+library(ggtext)
+library(extrafont)
+library(pdftools)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 29)
+
+astronauts <- tuesdata$astronauts
+```
+
+```{r}
+astronauts %>% 
+  filter(in_orbit %in% c("aborted","explosion")| hours_mission == 0) %>% 
+  view()
+```
+
+```{r Fibonacci Sequence}
+gen_density <- function(n, k = 5){
+  
+  gr <- (sqrt(5) + 1)/2
+  ga <- (2-gr)*(2*pi)
+  #ga <- 76*pi/180
+  r <- sqrt(1:n)*k
+  theta <- ga * 1:n
+  
+  tibble(x = cos(theta) * r, y = sin(theta) * r)
+  
+}
+```
+
+```{r Data}
+data <-  astronauts %>% 
+  mutate(decade = year_of_mission%/%10*10,
+         military_civilian = str_to_sentence(military_civilian)) %>% 
+  group_by(decade, military_civilian) %>%
+  arrange(sex) %>%
+  mutate(gen_density(n())) %>% 
+  ungroup()
+```
+
+```{r Facets}
+facets <- data %>% 
+  mutate(illumination = case_when(
+    military_civilian == "Civilian" ~ sqrt(x**2+(y-80)**2),
+    T ~ sqrt(x**2+(y+80)**2)
+    )
+  ) %>% 
+  ggplot() +
+    geom_segment(
+      aes(x = 0, y = 0, xend = x, yend = y), 
+      color = "white", alpha = 0.1
+    ) +
+    geom_point(
+      data = . %>% filter(sex == "male", !in_orbit %in% c("explosion","aborted")), 
+      aes(x, y, color = illumination, size = hours_mission)
+    ) +
+    new_scale_color() +
+    geom_point(
+      data = . %>% filter(sex == "female", !in_orbit %in% c("explosion","aborted")), 
+      aes(x, y, color = illumination, size = hours_mission)
+    ) +
+    scale_color_gradient(
+      low = "#d31c5b", high = "#f99a9c"
+    ) +
+    geom_point(
+      data = . %>% filter(in_orbit %in% c("explosion")), 
+      aes(x, y), color = "white", size = 0.6
+    ) +
+    geom_point(
+      data = . %>% filter(in_orbit %in% c("aborted")), 
+      aes(x, y), color = "white", size = 1, shape = 1
+    ) +
+    facet_grid(military_civilian ~ decade) +
+    coord_equal() +
+    theme_void()
+```
+
+```{r plot}
+grob <- ggplotGrob(facets)
+
+# gtable::gtable_show_layout(grobbed)
+
+notes <- tribble(
+  ~x,~y,~label,
+  0.5,0.5, "Valentina Tereshkova,\na retired cosmonaut,\nbecame the first woman\nto go into space on\nJune 16, 1963.",
+  1.5,0.5, "Apollo–Soyuz was the first\ninternational space mission, carried out\njointly by the USA and the USSR\n on July 15, 1975.",
+  2.5,5.7, "During the STS-51-L mission\non January 28, 1986,\nall seven crew members died from\nthe Challenger explosion,\nminutes after launch.",
+  3.5,5.7, "Valeri Polyakov, a former cosmonaut,\nset the longest duration spaceflight\n(437 days 18 hours) on March 22, 1995.",
+  4.5,5.7, "During the first decade of 2000,\nseven people became the first space\ntourists. Charles Simonyi, an American\nbusinessman, became the first\nrepeat space tourist.",
+  5.5,0.5, "Soyuz MS-10 launch to the\nInternational Space Station\nwas aborted on October 11, 2018.\nBoth crew members, survived the incident."
+  )
+
+plot <- ggplot() +
+  geom_segment(
+    aes(x = 0, xend = 6, y = 3, yend = 3), 
+    color = "white"
+  ) +
+  geom_text(
+    aes(x = 1:6-0.5, y = 2.8, label = str_c(seq(1960,2010,10), "s")), 
+    color = "white", family = "Nasalization Rg"
+  ) +
+  geom_text(
+    aes(x = 0.2, y = c(6.2,-.2), label = c("CIVILIANS","MILITARY")), 
+    color = "white", size = 4, family = "Nasalization Rg"
+  ) +
+  geom_text(
+    data = notes, aes(x, y,label = label), 
+    color = "white", size = 3, family = "Nasalization Rg"
+  ) +
+  annotation_custom(
+    grob = grob[8,seq(5,15,2)],
+    xmin = 0,
+    xmax = 6,
+    ymin = 3,
+    ymax = 6
+  ) +
+  annotation_custom(
+    grob = grob[10,seq(5,15,2)],
+    xmin = 0,
+    xmax = 6,
+    ymin = 0,
+    ymax = 3
+  ) +
+  annotate(
+    geom = "text", x = 1, y = 3.5, 
+    color = "white", size = 13, vjust = 0,
+    family = "Nasalization Rg",
+    label = "To Infinity and Beyond"
+  ) +
+  annotate(
+    geom = "richtext", x = 1, y = 3.15, 
+    color = "white", size = 3, vjust = 0,
+    fill = NA, label.color = NA,
+    family = "Nasalization Rg",
+    label = "All <b style='color:#105bd8'>men</b> & <b style='color:#be2535'>women</b> astronauts who participated in space missions before 15 January 2020.<br>Size of the point represents the duration of the mission."
+  ) +
+  labs(
+    caption = "@AtMissing · Astronaut database by Stavnichuk, M. & Corlett, T."
+  ) +
+  theme_void() +
+  theme(
+    plot.background = element_rect(fill = "black"),
+    legend.position = "none",
+    plot.caption = element_text(color = "white", hjust = 0.5, vjust = 10, family = "Nasalization Rg")
+  )
+```
+
+```{r}
+ggsave(here::here("plots","wk_29_2020.pdf"), plot, width = 19.2, height = 10.8, device = cairo_pdf)
+pdf_convert(pdf = here::here("plots","wk_29_2020.pdf"), format = "png", dpi = 400, filenames = here::here("plots","wk_29_2020.png"))
+```
