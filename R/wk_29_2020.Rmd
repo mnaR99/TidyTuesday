@@ -111,8 +111,8 @@ plot <- ggplot() +
     color = "white", family = "Nasalization Rg"
   ) +
   geom_text(
-    aes(x = 0, y = c(4.5,1.5), label = c("CIVILIANS","MILITARY")), 
-    color = "white", size = 4, family = "Nasalization Rg", angle = 90
+    aes(x = 0.2, y = c(6.2,-.2), label = c("CIVILIANS","MILITARY")), 
+    color = "white", size = 4, family = "Nasalization Rg"
   ) +
   geom_text(
     data = notes, aes(x, y,label = label), 
