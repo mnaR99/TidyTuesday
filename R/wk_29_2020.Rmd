@@ -25,7 +25,7 @@ astronauts %>%
   view()
 ```
 
-```{r Fibonacci Sequence}
+```{r Fermat's spiral}
 gen_density <- function(n, k = 5){
   
   gr <- (sqrt(5) + 1)/2
