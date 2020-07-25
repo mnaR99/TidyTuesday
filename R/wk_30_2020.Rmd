@@ -1,0 +1,193 @@
+---
+title: "Australian Pets"
+author: "mnaR99"
+date: "21/7/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggforce)
+library(ggfittext)
+library(extrafont)
+library(pdftools)
+```
+
+```{r}
+extrafont::loadfonts()
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 30)
+
+animal_outcomes <- tuesdata$animal_outcomes
+```
+
+```{r data}
+outcomes <- animal_outcomes %>% 
+  mutate(
+    outcome = fct_recode(outcome, "Currently In Care" = "In Stock"),
+    outcome = fct_relevel(outcome, "Rehomed", "Reclaimed", "Released", "Currently In Care", "Transferred", "Euthanized", "Other"),
+    animal_type = fct_relevel(animal_type, "Other Animals", "Livestock", "Horses", "Wildlife", "Dogs", "Cats")
+  ) %>% 
+  count(year, animal_type, outcome, wt = Total) %>% 
+  group_by(outcome, animal_type) %>% 
+  mutate(stnd = (n-min(n))/(max(n)-min(n)))
+```
+
+```{r plot}
+plotAus <- outcomes %>% 
+  ggplot(aes(year, animal_type, fill = animal_type)) +
+    facet_col(
+      vars(outcome), 
+      scale = "free_y", 
+      space = "free"
+    ) +
+    geom_tile(aes(alpha = stnd), width = 0.9, height = 0.9) +
+    geom_tile(
+      data = . %>% filter(stnd == 1),
+      color = "#F9EBE0",
+      fill = NA,
+      width = 0.8, 
+      height = 0.8,
+      size = 0.3
+    ) +
+    geom_tile(
+      data = . %>% filter(stnd == 0),
+      aes(color = animal_type),
+      fill = NA,
+      width = 0.8, 
+      height = 0.8,
+      size = 0.3
+    ) +
+    geom_fit_text(
+      data = . %>% filter(stnd %in% c(0,1)),
+      aes(label = scales::comma(n,1)),
+      color = "#272635",
+      family = "Century Gothic"
+    ) +
+    # geom_text(
+    #   data = . %>% filter(stnd %in% c(0,1)),
+    #   aes(label = scales::comma(n,1)),
+    #   color = "grey10",
+    #   size = 1.5
+    # ) +
+    scale_x_continuous(
+      expand = c(0,0), 
+      breaks = seq(2001,2016,3),
+      sec.axis = dup_axis(breaks = seq(2001,2016,3))
+    ) +
+    scale_y_discrete(
+      expand = c(0,1)
+    ) +
+    scale_fill_brewer(
+      type = "qual",
+      palette = 7
+    ) +
+    scale_color_brewer(
+      type = "qual",
+      palette = 7
+    ) +
+    # rcartocolor::scale_fill_carto_d(type = "qualitative", palette = 1) +
+    # rcartocolor::scale_color_carto_d(type = "qualitative", palette = 1) +
+    # rcartocolor::scale_fill_carto_d(type = "qualitative", palette = 4) +
+    # rcartocolor::scale_color_carto_d(type = "qualitative", palette = 4) +
+    scale_alpha_continuous(
+      breaks = seq(0,1,0.1),
+      labels = c("Min.",rep("",9),"Max.")
+    ) +
+    guides(
+      fill = FALSE,
+      color = FALSE,
+      alpha = FALSE
+    ) +
+    labs(
+      title = "Animals received nationally by the RSPCA Australia, 1999-2019",
+      subtitle = "The RSPCA is an independent, community-based charity providing animal care and protection services across the country. As a federated\norganization, the RSPCA’s member societies in each state and territory run animal rehoming shelters, investigate and prosecute animal cruelty\ncomplaints, and educate the community on animal welfare and responsible pet ownership.\n\nWith a great deal of effort from RSPCAs all over the country, adoption and reclaiming rates nationally have been increasing over time and\nsignificant improvements in the outcomes for cats and dogs have been achieved. This can be attributed to the introduction of new approaches\nand programs to increase the number of animals adopted and reunited with their owners.",
+      caption = "@AtMissing ·  RSPCA Australia National Statistics"
+    ) +
+    theme_minimal() +
+    theme(
+      axis.title = element_blank(), 
+      axis.ticks = element_blank(),
+      axis.text = element_text(
+        family = "Century Gothic", 
+        color = "#272635"
+      ),
+      plot.background = element_rect(
+        fill = "#F9EBE0",
+        color = "#F9EBE0"
+      ),
+      plot.margin = margin(15,15,15,15),
+      plot.title.position = "plot",
+      plot.title = element_text(
+        family = "Century Gothic Negrita", #Century Gothic Bold
+        color = "#272635", 
+        size = 16
+      ),
+      plot.subtitle = element_text(
+        family = "Century Gothic", 
+        color = "#272635", 
+        size = 8, 
+        margin = margin(t = 10, b = 20)
+      ),
+      plot.caption.position = "plot",
+      plot.caption = element_text(
+        family = "Century Gothic", 
+        color = "#272635", 
+        hjust = 0.5, 
+        margin = margin(15)
+      ),
+      panel.grid.major.x = element_line(
+        color = "#2726351A", 
+        linetype = 3
+      ),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.spacing.y = unit(0, "mm"),
+      strip.text = element_text(
+        family = "Century Gothic Negrita", #Century Gothic Bold
+        color = "#F9EBE0", 
+        hjust = 0
+      ),
+      strip.background = element_rect(
+        fill = "#272635", 
+        color = NA
+      ),
+    )
+
+ggsave(here::here("plots","wk_30_2020.pdf"), plotAus, width = 8.4, height = 18.2, device = cairo_pdf)
+
+pdftools::pdf_convert(
+  pdf = here::here("plots","wk_30_2020.pdf"),
+  filenames = here::here("plots","wk_30_2020.png"),
+  format = "png", 
+  dpi = 400
+)
+```
+
+```{r Tiles Plot - All regions}
+
+# Too wide, also needs cleaning, and some data seems to be swapped and shifted
+
+plotRegions <- animal_outcomes %>% 
+  mutate(
+    outcome = fct_recode(outcome, "Currently In Care" = "In Stock"),
+    outcome = fct_relevel(outcome, "Rehomed", "Reclaimed", "Released", "Currently In Care", "Transferred", "Euthanized", "Other"),
+    animal_type = fct_relevel(animal_type, "Other Animals", "Horses", "Livestock", "Wildlife", "Cats", "Dogs")
+  ) %>% 
+  pivot_longer(ACT:WA, "code", values_to = "n") %>% 
+  left_join(geofacet::aus_grid1[,3:4]) %>% 
+  count(year, name, outcome, animal_type) %>% 
+  ggplot(aes(year, animal_type, fill = log10(n), label = ifelse(n>0,n,NA))) +
+    facet_grid_paginate(outcome~name, scales = "free_y", space = "free", switch = "y",ncol = 4) +
+    geom_tile() +
+    geom_fit_text(angle = 90) +
+    scale_fill_distiller(type = "div", palette = 9, direction = 1, na.value = "grey90") +
+    scale_x_continuous(sec.axis = dup_axis()) +
+    theme_light() +
+    theme(strip.placement = "outside", panel.grid.major.y = element_blank(), axis.title = element_blank())
+
+ggsave(here::here("plots","wk_30_2020_Regions.pdf"), plotRegions, width = 36, height = 12, device = cairo_pdf)
+```
