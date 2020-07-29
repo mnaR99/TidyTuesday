@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Palmer Penguins"
 author: "mnaR99"
 date: "28/7/2020"
 output: html_document
@@ -61,7 +61,6 @@ summ_data <- data %>%
     stat_st = median(st)
   )
 ```
-
 
 ```{r Plot}
 plot <- ggplot() +
