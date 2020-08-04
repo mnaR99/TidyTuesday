@@ -4,6 +4,12 @@ Graphic Contributions to Tidy Tuesday Project
 
 ***
 
+### [2020/32](https://github.com/mnaR99/TidyTuesday/blob/master/R/wk_32_2020.Rmd) European energy
+
+![./plots/wk_32_2020.png](https://raw.githubusercontent.com/mnaR99/TidyTuesday/master/plots/wk_32_2020.png)
+
+***
+
 ### [2020/31](https://github.com/mnaR99/TidyTuesday/blob/master/R/wk_31_2020.Rmd) Palmer Penguins
 
 ![./plots/wk_31_2020.png](https://raw.githubusercontent.com/mnaR99/TidyTuesday/master/plots/wk_31_2020.png)
