@@ -196,7 +196,7 @@ plot <- qplot() +
         family = "Montserrat",
         margin = margin(b = 30)
       ),
-    plot.background = element_rect(fill = "#f0f0f0")
+    plot.background = element_rect(fill = "#f0f0f0", color = NA)
   )
   
 ggsave(here::here("plots","wk_32_2020.pdf"), plot, width = 20, height = 20, device = cairo_pdf)
