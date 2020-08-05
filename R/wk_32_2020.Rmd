@@ -129,7 +129,7 @@ legendG <- cowplot::get_legend(pies)
 ```{r notes}
 notes <- tribble(
   ~x, ~y, ~label,
-  0, -4.5, "**Albania** is dependent on hydroelectricity, with a share in its production of 100%. Still, its location has the potential to supply power from wind, sun, and soil.",
+  0, -4.5, "**Albania** is dependent on hydroelectricity, with a share in its production of 100%. Still, its topography has the potential to supply power from wind, sun, and soil.",
   -3, 0.5, "**France** is the second largest producer of energy in the region, and has the largest share of nuclear electricity (71.3%) in the world.", 
   1, 1.75, "**Germany** is the country that produced the most energy in 2018, 12.6% was nuclear energy and 31.3% renewable energy.",
   -0.5, 3.15, "Much of **Norway**'s electricity is generated from hydropower (95%) due to the natural advantage of its topography with abundant valleys and steep rivers.", 
