@@ -1,0 +1,135 @@
+---
+title: "African-American Achievments"
+author: "mnaR99"
+data: "10/07/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(extrafont)
+library(ggbeeswarm)
+library(ggtext)
+```
+
+```{r data}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 24)
+firsts <- tuesdata$firsts
+```
+
+```{r pseudo-beeswarm}
+dotting <- function(data,n){
+
+  if (n == 1) {
+    v <- 0
+  } else if (n%%2 == 0) {
+    v <- c(rev(-seq(1/2,n/2,1)),seq(1/2,n/2,1))
+  } else {
+    v <- c(rev(-seq(1,n/2,1)),seq(0,n/2,1))
+  }
+  data$location <- v
+  return(data)
+}
+```
+
+```{r data}
+data <- firsts %>%
+  mutate(
+    gender = str_replace(gender, "-", " ") %>% str_remove(" Firsts"), 
+    lustrum = year%/%5 * 5,
+    category = fct_infreq(category)
+  ) %>% 
+  arrange(category) %>%
+  nest(-lustrum) %>% 
+  mutate(
+    row = map_dbl(data,nrow),
+    data = map2(data,row,~dotting(.x,.y))
+  ) %>% 
+  unnest()
+```
+
+```{r notes}
+notes <- 
+  tribble(
+    ~y, ~x, ~label, ~vjust,
+    18, 1765, "**1738**<br>First free African-American community", 1,
+    18, 1850, "**1899**<br>First African-American to achieve a world championship in any sport", 1,
+    -18, 1850, "Ratification of the 13th Amendment,<br>Abolishment of slavery<br>**1865**", 0,
+    -18, 1932, "Civil Rights Movement<br>**1950s-1960s**", 0
+  )
+```
+
+```{r plot}
+plot <- ggplot() +
+  geom_point(
+    data = data,
+    aes(x = lustrum, y = location, color = category), 
+    size = 2.5
+  ) +
+  scale_x_continuous(
+    breaks = c(1800,1900,2000),
+    minor_breaks = seq(1750, 2015, 25)
+  ) +
+  geom_text(
+    aes(x = c(1725, 1800, 1900, 2000) + 12.5, y = -20, label = c("1700s", "1800s", "1900s", "2000s")),
+    family = "Perpetua Titling MT",
+    size = 3
+  ) +
+  geom_curve(
+    aes(x = c(1765, 1850), y = 17, xend = c(1737, 1894), yend = c(0.5, 2.5)), 
+    curvature = -0.2,
+    arrow = arrow(length = unit(2, "mm")),
+    size = 1, 
+    color = "#57585C", 
+    lineend = "round"
+  ) +
+  geom_textbox(
+    data = notes,
+    aes(x, y, label = label, vjust = vjust),
+    width = 0.17,
+    color = "#f0f0f0",
+    fill = "#1A1A1A",
+    size = 3.5,
+    lineheight = 1.5,
+    family = "Open Sans",
+    box.color = NA
+  ) +
+  rcartocolor::scale_color_carto_d(type = "qualitative", palette = 6) +
+  guides(color = guide_legend(title.theme = element_blank(), nrow = 1)) +
+  labs(
+    title = "First achievements by African-Americans",
+    caption = "@AtMissing · Wikipedia. List of African-American firsts"
+  ) +
+  theme_void(base_family = "Open Sans") +
+  theme(
+    plot.background = element_rect(fill = "#1A1A1A", color = NA),
+    plot.title = element_text(
+      color = "#f0f0f0",
+      family = "Perpetua Titling MT",
+      size = 20,
+      hjust = 0.5, 
+      margin = margin(t = 40, b = 20)
+    ),
+    plot.caption = element_text(
+      color = "#f0f0f0",
+      hjust = 0.5, 
+      margin = margin(t = 30, b = 20)
+    ),
+    legend.position = "top",
+    legend.text = element_text(color = "#f0f0f0"),
+    legend.box.margin = margin(b = 20),
+    panel.grid.major.x = element_line(color = "#8182894D"),
+    panel.grid.minor.x = element_line(color = "#8182891A"),
+  )
+
+ggsave(here::here("plots","wk_24_2020.pdf"), plot, width = 16, height = 8, device = cairo_pdf)
+```
+
+```{r png save}
+pdftools::pdf_convert(
+  pdf = here::here("plots","wk_24_2020.pdf"),
+  filenames = here::here("plots","wk_24_2020_v2.png"),
+  format = "png", 
+  dpi = 400
+)
+```
