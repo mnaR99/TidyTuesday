@@ -1,0 +1,112 @@
+---
+title: "Slave Voyages"
+author: "mnaR99"
+data: "10/07/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(extrafont)
+library(tidygraph)
+library(igraph)
+library(ggraph)
+library(ggtext)
+```
+
+```{r data}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 25)
+slave_routes <- tuesdata$slave_routes
+```
+
+```{r network}
+routes_nw <- slave_routes %>% 
+  mutate_at(vars(port_origin, port_arrival), str_remove, pattern = ",.*$") %>% 
+  mutate_at(vars(port_origin, port_arrival), str_remove, pattern = " \\(.*$") %>% 
+  count(port_origin, port_arrival, sort = T) %>% 
+  filter(port_origin != port_arrival) %>% 
+  head(300) %>% 
+  graph_from_data_frame()
+
+communities <- igraph::walktrap.community(routes_nw)
+
+V(routes_nw)$color <- as.character(membership(communities))
+
+V(routes_nw)$dgr <- degree(routes_nw, mode = "all")
+```
+
+```{r notes}
+notes <- tribble(
+  ~x, ~y, ~halign, ~label,
+  -6, 8.0, 0, "**1525**<br>First slave voyage direct from Africa to the Americas",
+  -6, 7.0, 0, "**1560**<br>Continuous slave trade from Brazil begins",
+  20, -3.0, 1, "**1808**<br>Abolition of British and US slave trades takes effect",
+  20, -4.0, 1, "**1830**<br>The anglo-Brazilian anti-slave trade treaty", 
+  20, -5.0, 1, "**1850**<br>Brazil suppresses the slave trade",
+  20, -6.0, 1, "**1866**<br>Last reported transatlantic slave voyage arrives in the Americas"
+)
+```
+
+```{r plot}
+set.seed(4213)
+
+plot <- routes_nw %>% 
+  ggraph(layout = layout_nicely(routes_nw)) +
+    geom_edge_fan(
+      aes(alpha = n),
+      color = "#f0f0f0",
+      start_cap = circle(0.7), 
+      end_cap = circle(0.4),
+      arrow = grid::arrow(length = unit(0.06,"inches"), type = "closed")
+    ) +
+    geom_node_point(aes(color = color, size = dgr)) +
+    scale_size(range = c(1,12)) +
+    ggnewscale::new_scale("size") +
+    geom_node_text(
+      aes(label = name, size = dgr),
+      color = "#F0F0F0",
+      repel = TRUE,
+      segment.color = NA,
+      family = "Open Sans"
+    ) +
+    geom_textbox(
+      data = notes,
+      aes(x, y, label = label, halign = halign, hjust = halign),
+      width = 0.25,
+      fill = NA, 
+      box.color = NA,
+      size = 4.5,
+      color = "#F0F0F0",
+      family = "Open Sans"
+    ) +
+    geom_text(
+      aes(x = 13, y = 7.5, label = "300 Most Common\nTransatlantic Slave Routes"),
+      color = "#F0F0F0",
+      family = "Lucida Calligraphy",
+      size = 15
+    ) +
+    scale_color_manual(values = c("#2191FB","#F21B3F","#97DB4F","#EEC643","#1B998B")) +
+    labs(caption = "@AtMissing ·  Slave Voyages project. Transatlantic Slave Trade") +
+    theme_void() +
+    theme(
+      plot.background = element_rect(fill = "#0D1321", color = NA),
+      plot.caption = element_text(
+        hjust = 0.5, 
+        color = "#F0F0F0", 
+        family = "Open Sans", 
+        margin = margin(b = 30)
+      ), 
+      legend.position = "none",
+    )
+
+ggsave(here::here("plots","wk_25_2020.pdf"), plot, width = 20, height = 16, device = cairo_pdf)
+```
+
+```{r png save}
+pdftools::pdf_convert(
+  pdf = here::here("plots","wk_25_2020.pdf"),
+  filenames = here::here("plots","wk_25_2020_v2.png"),
+  format = "png", 
+  dpi = 400
+)
+```
