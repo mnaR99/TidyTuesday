@@ -4,6 +4,12 @@ Graphic Contributions to Tidy Tuesday Project
 
 ***
 
+### [2020/34](https://github.com/mnaR99/TidyTuesday/blob/master/R/wk_34_2020.Rmd) Extinct Plants
+
+![./plots/wk_34_2020.png](https://raw.githubusercontent.com/mnaR99/TidyTuesday/master/plots/wk_34_2020.png)
+
+***
+
 ### [2020/32](https://github.com/mnaR99/TidyTuesday/blob/master/R/wk_32_2020.Rmd) European energy
 
 ![./plots/wk_32_2020.png](https://raw.githubusercontent.com/mnaR99/TidyTuesday/master/plots/wk_32_2020.png)
