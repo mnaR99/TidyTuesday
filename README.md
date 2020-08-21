@@ -1,6 +1,6 @@
 # Tidy Tuesday
 
-Graphic Contributions to Tidy Tuesday Project
+Contributions to Tidy Tuesday Project
 
 ***
 
